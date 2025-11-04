@@ -1,0 +1,15 @@
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/bin/Debug/net9.0/lab_2
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/bin/Debug/net9.0/lab_2.deps.json
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/bin/Debug/net9.0/lab_2.runtimeconfig.json
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/bin/Debug/net9.0/lab_2.dll
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/bin/Debug/net9.0/lab_2.pdb
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.GeneratedMSBuildEditorConfig.editorconfig
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.AssemblyInfoInputs.cache
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.AssemblyInfo.cs
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.csproj.CoreCompileInputs.cache
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.sourcelink.json
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.dll
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/refint/lab_2.dll
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.pdb
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/lab_2.genruntimeconfig.cache
+/Users/username/Documents/GitHub/knu/cryptology/lab_2/obj/Debug/net9.0/ref/lab_2.dll

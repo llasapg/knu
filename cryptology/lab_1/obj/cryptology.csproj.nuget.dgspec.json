@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/username/Documents/GitHub/knu/cryptology/lab_1/cryptology.csproj": {}
+  },
+  "projects": {
+    "/Users/username/Documents/GitHub/knu/cryptology/lab_1/cryptology.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/username/Documents/GitHub/knu/cryptology/lab_1/cryptology.csproj",
+        "projectName": "cryptology",
+        "projectPath": "/Users/username/Documents/GitHub/knu/cryptology/lab_1/cryptology.csproj",
+        "packagesPath": "/Users/username/.nuget/packages/",
+        "outputPath": "/Users/username/Documents/GitHub/knu/cryptology/lab_1/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/username/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "/usr/local/share/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "9.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

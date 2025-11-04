@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Storage DApp</title>
+  </head>
+  <body>
+    <h1>Simple Storage DApp</h1>
+    <p>Введіть число для зберігання:</p>
+    <input type="number" id="inputData" />
+    <button onclick="setData()">Зберегти</button>
+    <p>Збережене число:</p>
+    <button onclick="getData()">Отримати</button>
+    <p id="displayData"></p>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
