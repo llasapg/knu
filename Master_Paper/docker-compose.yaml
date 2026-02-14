@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  azure-bridge:
+    build:
+      context: ./net-azure-sender
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - IOTHUB_SERVICE_STR="Endpoint=sb://ihsuprodamres035dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=rr0L4ujscyGXPgPHABrBRB+OnhJJteg+zAIoTLeMFis=;EntityPath=iothub-ehub-knu2026-66480245-b8c893d427"
+    ports:
+      - "5000:5000"
+    restart: always
+
+  ml-processor:
+    build:
+      context: ./python-model
+      dockerfile: Dockerfile
+    environment:
+      - NET_SERVICE_URL=http://azure-bridge:5000/api/iot/update-twin
+    depends_on:
+      - azure-bridge
+    restart: on-failure
+
+networks:
+  default:
+    name: iot-network

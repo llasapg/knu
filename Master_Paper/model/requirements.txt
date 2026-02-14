@@ -1,7 +1,0 @@
-numpy
-tensorflow-macos
-matplotlib
-tensorflow-metal
-azure-eventhub
-azure-storage-blob
-python-dotenv

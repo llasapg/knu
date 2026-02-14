@@ -1,0 +1,6 @@
+tensorflow
+numpy<2.0.0
+azure-eventhub
+azure-storage-blob
+python-dotenv
+requests

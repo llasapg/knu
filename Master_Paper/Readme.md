@@ -5,5 +5,7 @@ pip install --upgrade pip
 pip install numpy==1.26.4 tensorflow-macos tensorflow-metal matplotlib azure-eventhub azure-storage-blob
 python main.py
 
+brew install cmake openssl
+
 # Сгенерує ваги
 xxd -i smartiot_model.tflite > model_data.h
