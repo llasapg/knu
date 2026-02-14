@@ -5,6 +5,8 @@ import time
 import hmac
 import hashlib
 import base64
+from azure.iot.hub import IoTHubRegistryManager
+from azure.iot.hub.models import Twin, TwinProperties
 from dotenv import load_dotenv
 from azure.storage.blob import BlobServiceClient
 
@@ -18,12 +20,26 @@ BLOB_CONN_STR = os.getenv("BLOB_CONN_STR")
 
 def generate_sas_token(uri, key, policy_name, expiry=3600):
     ttl = int(time.time()) + expiry
+    # Ресурс ДОЛЖЕН быть в нижнем регистре и закодирован
+    uri = uri.lower().strip()
     encoded_uri = urllib.parse.quote(uri, safe='')
+
+    # Строка для подписи: URI + новая строка + TTL
     string_to_sign = f"{encoded_uri}\n{ttl}"
+
+    # ВАЖНО: Декодируем Base64 ключ
     decoded_key = base64.b64decode(key)
-    signature = hmac.new(decoded_key, string_to_sign.encode('utf-8'), hashlib.sha256).digest()
+
+    # Создаем HMAC-SHA256 подпись
+    signature = hmac.new(
+        decoded_key,
+        string_to_sign.encode('utf-8'),
+        hashlib.sha256
+    ).digest()
+
     encoded_sig = base64.b64encode(signature).decode('utf-8')
     url_encoded_sig = urllib.parse.quote(encoded_sig, safe='')
+
     return f"SharedAccessSignature sr={encoded_uri}&sig={url_encoded_sig}&se={ttl}&skn={policy_name}"
 
 def upload_model_to_blob(tflite_model_bytes, model_bytes, device_id, threshold):
@@ -52,10 +68,12 @@ def update_device_twin(device_id, threshold, min_vals=None, max_vals=None):
         key_name = parts['SharedAccessKeyName'].strip()
         key_val = parts['SharedAccessKey'].strip()
 
-        resource_uri = f"{host}/devices/{device_id}"
+        resource_uri = f"{host}/twins/{device_id}"
         token = generate_sas_token(resource_uri, key_val, key_name)
 
-        url = f"https://{host}/devices/{device_id}/twin?api-version=2020-03-13"
+        print(f"{token}")
+
+        url = f"https://{host}/twins/{device_id}?api-version=2020-03-13"
 
         headers = {
             'Authorization': token,

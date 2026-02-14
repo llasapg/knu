@@ -175,7 +175,7 @@ void loop() {
   if (digitalRead(BUTTON_SEND_PIN) == LOW) {
     delay(50);
     if (digitalRead(BUTTON_SEND_PIN) == LOW && !isCalibrating) {
-      String telemetry = "{\"device_id\":\"test_1\",\"light\":" + String(lightValue) + 
+      String telemetry = "{\"device_id\":\"test_1\",\"cmd\":\"UPLOAD\",\"light\":" + String(lightValue) + 
                          ",\"temp\":" + String(temp, 1) + ",\"hum\":" + String(hum, 0) + "}";
       mqttClient.publish(D2C_TOPIC, (const uint8_t*)telemetry.c_str(), telemetry.length(), false);
       while(digitalRead(BUTTON_SEND_PIN) == LOW);

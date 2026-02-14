@@ -37,4 +37,6 @@ class EventProcessor:
             elif cmd == "STOP" and self.is_calibrating:
                 self.is_calibrating = False
                 trainer.train_and_upload(self)
+            elif cmd == "UPLOAD":
+                azure_helper.update_device_twin(DEVICE_ID, 0.0002)
         except Exception: pass
