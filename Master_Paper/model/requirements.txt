@@ -1,0 +1,4 @@
+numpy
+tensorflow-cpu
+azure-eventhub
+azure-storage-blob

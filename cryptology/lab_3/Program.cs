@@ -269,7 +269,8 @@ public static class Program
             }
 
             (a, n) = (n, a);
-            if ((a % 4 == 3) && (n % 4 == 3)) result = -result;
+            if ((a % 4 == 3) && (n % 4 == 3))
+                result = -result;
             a %= n;
         }
         return n == 1 ? result : 0;
