@@ -9,6 +9,7 @@ load_dotenv()
 DEVICE_ID = os.getenv("DEVICE_ID", "test_1")
 BLOB_CONN_STR = os.getenv("BLOB_CONN_STR")
 NET_SERVICE_URL = os.getenv("NET_SERVICE_URL", "http://localhost:5000/api/iot/update-twin")
+EVENTHUB_NAME = os.getenv("EVENTHUB_NAME")
 
 def upload_model_to_blob(tflite_model_bytes, device_id, threshold):
     """Конвертирует модель в C-header и заливает в Azure Blob Storage"""

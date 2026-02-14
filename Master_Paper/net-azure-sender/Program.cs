@@ -5,11 +5,11 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Регистрируем RegistryManager как Singleton
 var iotHubConnectionString = builder.Configuration["IOTHUB_SERVICE_STR"];
 builder.Services.AddSingleton(RegistryManager.CreateFromConnectionString(iotHubConnectionString));
 
 var app = builder.Build();
+
 
 app.MapPost("/api/iot/update-twin", async (
     [FromBody] TwinUpdateDto data,
