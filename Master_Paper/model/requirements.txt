@@ -1,4 +1,7 @@
 numpy
-tensorflow-cpu
+tensorflow-macos
+matplotlib
+tensorflow-metal
 azure-eventhub
 azure-storage-blob
+python-dotenv
