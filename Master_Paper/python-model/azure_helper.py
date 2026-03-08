@@ -10,9 +10,10 @@ DEVICE_ID = os.getenv("DEVICE_ID", "test_1")
 BLOB_CONN_STR = os.getenv("BLOB_CONN_STR")
 NET_SERVICE_URL = os.getenv("NET_SERVICE_URL", "http://localhost:5000/api/iot/update-twin")
 EVENTHUB_NAME = os.getenv("EVENTHUB_NAME")
+IOTHUB_CONNECTION_STR = os.getenv("IOTHUB_CONNECTION_STR")
 
 def upload_model_to_blob(tflite_model_bytes, device_id, threshold):
-    """Конвертирует модель в C-header и заливает в Azure Blob Storage"""
+    """Конвертує байти моделі в C-header формат та завантажує його в Azure Blob Storage для використання на ESP-32"""
     try:
         h_file_content = bytes_to_c_array(tflite_model_bytes, threshold)
         blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONN_STR)
@@ -34,7 +35,7 @@ def upload_model_to_blob(tflite_model_bytes, device_id, threshold):
         return None
 
 def bytes_to_c_array(data, threshold, var_name="smartiot_model"):
-    """Формирует содержимое .h файла для микроконтроллера"""
+    """Формує C-header файл з байтами моделі та порогом для використання в ESP-32"""
     hex_data = [f"0x{b:02x}" for b in data]
     c_code = f"#ifndef MODEL_DATA_H\n#define MODEL_DATA_H\n\n"
     c_code += f"unsigned char {var_name}[] = {{\n  "
@@ -44,7 +45,7 @@ def bytes_to_c_array(data, threshold, var_name="smartiot_model"):
     return c_code
 
 def update_device_twin(device_id, threshold, min_vals=None, max_vals=None):
-    """Отправляет данные в .NET сервис для обновления Twin в Azure"""
+    """Відправляє оновлення до .NET сервісу для оновлення Device Twin з новою моделлю та порогом"""
     try:
         storage_name = BLOB_CONN_STR.split('AccountName=')[1].split(';')[0]
         model_url = f"https://{storage_name}.blob.core.windows.net/models/{device_id}/model_data.h"

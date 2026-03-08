@@ -76,17 +76,34 @@ void setupCloud(const char* ssid, const char* pass, const char* host, int port, 
   mqttClient.setCallback(callback);
 }
 
-void maintainConnection(const char* deviceId, const char* host, const char* key, int ttl) {
-  if (!mqttClient.connected()) {
-    String uri = String(host) + "/devices/" + String(deviceId);
-    String sas = generate_sas_token(uri.c_str(), key, ttl);
-    String user = String(host) + "/" + String(deviceId) + "/?api-version=2021-04-12";
-    if (mqttClient.connect(deviceId, user.c_str(), sas.c_str())) {
-      // Подписываемся на Twin обновления
-      mqttClient.subscribe(TWIN_DESIRED_PATCH_TOPIC);
-      // Подписываемся на C2D сообщения
-      String subTopic = "devices/" + String(deviceId) + "/messages/devicebound/#";
-      mqttClient.subscribe(subTopic.c_str());
-    }
+bool maintainConnection(const char* deviceId, const char* host, const char* key, int ttl) {
+  // If already connected, just return true
+  if (mqttClient.connected()) {
+    return true;
   }
+
+  // Attempt to connect
+  Serial.println("Attempting MQTT connection...");
+  String uri = String(host) + "/devices/" + String(deviceId);
+  String sas = generate_sas_token(uri.c_str(), key, ttl);
+  String user = String(host) + "/" + String(deviceId) + "/?api-version=2021-04-12";
+
+  if (mqttClient.connect(deviceId, user.c_str(), sas.c_str())) {
+    Serial.println("Connected to Azure IoT Hub");
+
+    // Subscribe to Twin updates
+    bool s1 = mqttClient.subscribe(TWIN_DESIRED_PATCH_TOPIC);
+
+    // Subscribe to C2D messages
+    String subTopic = "devices/" + String(deviceId) + "/messages/devicebound/#";
+    bool s2 = mqttClient.subscribe(subTopic.c_str());
+
+    Serial.printf("Subscriptions: Twin=%s, C2D=%s\n", s1 ? "OK" : "FAIL", s2 ? "OK" : "FAIL");
+
+    return true;
+  }
+
+  Serial.print("Connection failed, rc=");
+  Serial.println(mqttClient.state());
+  return false;
 }

@@ -1,0 +1,31 @@
+flowchart TD
+    subgraph DataPrep ["1. Збір та підготовка"]
+        direction LR
+        S1["Апаратні сенсори"] --> S2["Вікно даних<br>(N=10 відліків)"]
+        S2 --> S3["Min-Max Нормалізація<br>(Масштабування 0..1)"]
+    end
+
+    subgraph ML_Model ["2. TinyML Інференс на ESP32 (Int8 Quantization)"]
+        direction LR
+        L1["Вхідний шар<br>(10 нейронів)"] --> L2["Енкодер<br>(8 нейронів)"]
+        L2 --> L3["Bottleneck<br>(Латентний простір: 4)"]
+        L3 --> L4["Декодер<br>(8 нейронів)"]
+        L4 --> L5["Відновлений<br>сигнал (10)"]
+    end
+
+    subgraph Decision ["3. Прийняття рішення"]
+        direction TB
+        D1["Розрахунок MSE<br>(Помилка реконструкції)"] --> D2{"Чи MSE > τ (Порогу)?"}
+        D2 -- "Так (Аномалія)" --> D3["Ініціалізація Wi-Fi<br>Відправка Alert (MQTT Payload)"]
+        D2 -- "Ні (Норма)" --> D4["Відкидання даних<br>Deep Sleep (Економія батареї)"]
+    end
+
+    %% Зв'язки між поверхами
+    DataPrep --> ML_Model
+    ML_Model --> Decision
+
+    %% Стилізація для акцентів
+    style ML_Model fill:#f0f4c3,stroke:#9e9d24,stroke-width:2px
+    style D2 fill:#ffb74d,stroke:#e65100,stroke-width:2px
+    style D3 fill:#ef5350,color:#fff,stroke:#b71c1c,stroke-width:2px
+    style D4 fill:#90caf9,stroke:#0d47a1,stroke-width:2px

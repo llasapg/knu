@@ -55,7 +55,7 @@ unsigned long lastInference = 0;
 float currentThreshold = 0.05;
 float sensor_history[SEQ_LEN][FEATURES];
 
-void updateDisplay(String status, String line1 = "", String line2 = "") {
+void updateDisplay(String status, String line1 = "", String line2 = "", String line3 = "") {
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(1);
@@ -64,19 +64,28 @@ void updateDisplay(String status, String line1 = "", String line2 = "") {
   display.setCursor(0, 20);
   display.println(line1);
   display.setCursor(0, 40);
-  display.println(line2);
+  display.println(line2 + "  " + line3);
   display.display();
 }
 
 void messageCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.println("Recieved device twin update!!");
+  updateDisplay("Recieved device twin update ...");
   char message[length + 1];
   memcpy(message, payload, length);
   message[length] = '\0';
   StaticJsonDocument<512> doc;
   if (deserializeJson(doc, message) == DeserializationError::Ok) {
+    updateDisplay("deserializeJson completed");
     if (doc.containsKey("model_threshold")) {
       currentThreshold = doc["model_threshold"];
     }
+    else {
+      updateDisplay("No model_threshold provided!!!");
+    }
+  }
+  else {
+    updateDisplay("Failed to do deserializeJson");
   }
 }
 
@@ -129,7 +138,7 @@ void setup() {
 }
 
 void loop() {
-  maintainConnection(DEVICE_ID, IOTHUB_HOSTNAME, DEVICE_KEY, SAS_TOKEN_TTL_SECS);
+  bool isConnected = maintainConnection(DEVICE_ID, IOTHUB_HOSTNAME, DEVICE_KEY, SAS_TOKEN_TTL_SECS);
   mqttClient.loop();
   if (millis() - lastRead > 2000) {
     lightValue = analogRead(LIGHT_PIN);
@@ -152,7 +161,7 @@ void loop() {
         String alert = "{\"cmd\":\"ALERT\",\"mse\":" + String(mse, 4) + "}";
         mqttClient.publish(D2C_TOPIC, (const uint8_t*)alert.c_str(), alert.length(), false);
       } else {
-        updateDisplay("NORMAL MODE", "MSE: " + String(mse, 4), "L: " + String(lightValue));
+        updateDisplay("NORMAL MODE", "MSE: " + String(mse, 4), "L: " + String(lightValue), "C|H: " + String(temp) + "|" + String(hum));
       }
     }
   }

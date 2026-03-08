@@ -1,0 +1,17 @@
+flowchart TD
+    subgraph Традиційна_архітектура ["Традиційна архітектура (Пасивна ретрансляція)"]
+        direction TB
+        S1["Сенсори (I2C/SPI)"] -->|Безперервний потік| MCU1["Мікроконтролер (Збір даних)"]
+        MCU1 -->|"Wi-Fi / MQTT<br>(Високе енергоспоживання)"| Cloud1["Azure IoT Hub"]
+        Cloud1 -->|"Обробка 100% даних<br>(Швидке вичерпання квот)"| Store1[("Хмарне сховище")]
+    end
+
+    subgraph Архітектура_Edge_AI ["Архітектура Edge AI (Подійно-орієнтована)"]
+        direction TB
+        S2["Сенсори (I2C/SPI)"] -->|Сирі дані| MCU2["ESP32 Edge Node"]
+        MCU2 -->|"Локальний інференс<br>(TinyML Autoencoder)"| Filter{"Аномалія?<br>(MSE > Порогу)"}
+        Filter -- Ні --> Sleep["Ігнорування / Deep Sleep<br>(Економія батареї)"]
+        Filter -- Так --> Event["Формування MQTT Payload<br>(Alert)"]
+        Event -.->|"Тільки критичні події<br>(Мінімізація трафіку на 90%)"| Cloud2["Azure IoT Hub"]
+        Cloud2 -->|"Device Twins / Аналітика"| Store2[("Хмарне сховище")]
+    end

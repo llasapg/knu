@@ -48,7 +48,7 @@ def train_and_upload(self):
             converter.optimizations = [tf.lite.Optimize.DEFAULT]
             tflite_model_bytes = converter.convert()
 
-            azure_helper.upload_model_to_blob(tflite_model_bytes, self.temp_model_path, DEVICE_ID, threshold)
+            azure_helper.upload_model_to_blob(tflite_model_bytes, self.temp_model_path, DEVICE_ID)
 
             print(f"[SUCCESS] Model uploaded. Norm Threshold: {threshold:.6f}")
             azure_helper.update_device_twin(DEVICE_ID, threshold)
