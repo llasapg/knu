@@ -46,11 +46,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 DHT dht(DHT_PIN, DHT_TYPE, 40);
 
 bool isCalibrating = false;
+bool isAnomalyMode = false;
 int lightValue = 0;
 float temp = 0.0, hum = 0.0;
 unsigned long lastRead = 0;
 unsigned long lastCalibSend = 0;
-unsigned long lastInference = 0;
 
 float currentThreshold = 0.05;
 float sensor_history[SEQ_LEN][FEATURES];
@@ -69,31 +69,19 @@ void updateDisplay(String status, String line1 = "", String line2 = "", String l
 }
 
 void messageCallback(char* topic, byte* payload, unsigned int length) {
-  Serial.println("Recieved device twin update!!");
-  updateDisplay("Recieved device twin update ...");
   char message[length + 1];
   memcpy(message, payload, length);
   message[length] = '\0';
   StaticJsonDocument<512> doc;
   if (deserializeJson(doc, message) == DeserializationError::Ok) {
-    updateDisplay("deserializeJson completed");
     if (doc.containsKey("model_threshold")) {
       currentThreshold = doc["model_threshold"];
     }
-    else {
-      updateDisplay("No model_threshold provided!!!");
-    }
-  }
-  else {
-    updateDisplay("Failed to do deserializeJson");
   }
 }
 
 void initTFLite() {
-  if (sizeof(smartiot_model) < 100) {
-    Serial.println("Invalid model data");
-    return;
-  }
+  if (sizeof(smartiot_model) < 100) return;
   static tflite::MicroErrorReporter micro_error_reporter;
   error_reporter = &micro_error_reporter;
   model = tflite::GetModel(smartiot_model);
@@ -108,18 +96,64 @@ void initTFLite() {
 
 float calculateMSE() {
   if (interpreter == nullptr) return 0.0f;
-  int idx = 0;
+
+  // 1. Find Local Min and Max for the current window for Min-Max Scaling
+  float min_val = sensor_history[0][0];
+  float max_val = sensor_history[0][0];
+
   for (int i = 0; i < SEQ_LEN; i++) {
     for (int j = 0; j < FEATURES; j++) {
-      model_input->data.f[idx++] = sensor_history[i][j];
+      if (sensor_history[i][j] < min_val) min_val = sensor_history[i][j];
+      if (sensor_history[i][j] > max_val) max_val = sensor_history[i][j];
     }
   }
+
+  // Extract quantization parameters from the model
+  // Note: These are baked into the .tflite model during the conversion process
+  float input_scale = model_input->params.scale;
+  int input_zero_point = model_input->params.zero_point;
+  float output_scale = model_output->params.scale;
+  int output_zero_point = model_output->params.zero_point;
+
+  // Buffer to hold normalized float values for accurate MSE calculation later
+  float norm_input[INPUT_DIM];
+  int idx = 0;
+
+  // 2. Normalize and Quantize (q = round(W_f / S) + Z)
+  for (int i = 0; i < SEQ_LEN; i++) {
+    for (int j = 0; j < FEATURES; j++) {
+      float val = sensor_history[i][j];
+
+      // Min-Max Scaling to [0, 1]
+      float norm_val = (max_val - min_val == 0) ? 0 : (val - min_val) / (max_val - min_val);
+      norm_input[idx] = norm_val;
+
+      // Quantize to Int8
+      int16_t q_val = round(norm_val / input_scale) + input_zero_point;
+
+      // Clamp values to valid int8 range to prevent overflow
+      if (q_val > 127) q_val = 127;
+      if (q_val < -128) q_val = -128;
+
+      // Write quantized integer directly to model input
+      model_input->data.int8[idx++] = (int8_t)q_val;
+    }
+  }
+
+  // 3. Run Inference on the MCU
   if (interpreter->Invoke() != kTfLiteOk) return 0.0f;
+
+  // 4. Dequantize Output and Calculate Reconstruction Error
   float mse = 0;
   for (int i = 0; i < INPUT_DIM; i++) {
-    float diff = model_input->data.f[i] - model_output->data.f[i];
+    // Dequantize: float_val = (q_val - Z) * S
+    float out_f = (model_output->data.int8[i] - output_zero_point) * output_scale;
+
+    // Calculate difference between original normalized float and reconstructed float
+    float diff = norm_input[i] - out_f;
     mse += diff * diff;
   }
+
   return mse / INPUT_DIM;
 }
 
@@ -130,16 +164,22 @@ void setup() {
   pinMode(LIGHT_PIN, INPUT);
   dht.begin();
   display.begin(SSD1306_SWITCHCAPVCC, I2C_ADDR);
-  updateDisplay("TFLite Init...");
   initTFLite();
   currentThreshold = smartiot_model_threshold;
-  updateDisplay("Connecting Cloud...");
   setupCloud(WIFI_SSID, WIFI_PASSWORD, IOTHUB_HOSTNAME, MQTT_PORT, messageCallback);
 }
 
 void loop() {
-  bool isConnected = maintainConnection(DEVICE_ID, IOTHUB_HOSTNAME, DEVICE_KEY, SAS_TOKEN_TTL_SECS);
+  maintainConnection(DEVICE_ID, IOTHUB_HOSTNAME, DEVICE_KEY, SAS_TOKEN_TTL_SECS);
   mqttClient.loop();
+
+  if (digitalRead(BUTTON_SEND_PIN) == LOW) {
+    delay(200);
+    isAnomalyMode = !isAnomalyMode;
+    updateDisplay(isAnomalyMode ? "MODE: ANOMALY" : "MODE: NORMAL");
+    while(digitalRead(BUTTON_SEND_PIN) == LOW);
+  }
+
   if (millis() - lastRead > 2000) {
     lightValue = analogRead(LIGHT_PIN);
     float t = dht.readTemperature();
@@ -154,40 +194,40 @@ void loop() {
       sensor_history[SEQ_LEN-1][2] = hum;
     }
     lastRead = millis();
+
     if (!isCalibrating) {
-      float mse = calculateMSE();
-      if (mse > currentThreshold) {
-        updateDisplay("!! ANOMALY !!", "MSE: " + String(mse, 4));
-        String alert = "{\"cmd\":\"ALERT\",\"mse\":" + String(mse, 4) + "}";
-        mqttClient.publish(D2C_TOPIC, (const uint8_t*)alert.c_str(), alert.length(), false);
+      if (isAnomalyMode) {
+        float mse = calculateMSE();
+        if (mse > currentThreshold) {
+          updateDisplay("!! ANOMALY !!", "MSE: " + String(mse, 4), "TR: " + String(currentThreshold, 4));
+          String alert = "{\"cmd\":\"ALERT\",\"mse\":" + String(mse, 4) + "}";
+          mqttClient.publish(D2C_TOPIC, (const uint8_t*)alert.c_str(), alert.length(), false);
+        } else {
+          updateDisplay("ANOMALY MODE", "Status: Normal", "MSE: " + String(mse, 4), "TR: " + String(currentThreshold, 4));
+        }
       } else {
-        updateDisplay("NORMAL MODE", "MSE: " + String(mse, 4), "L: " + String(lightValue), "C|H: " + String(temp) + "|" + String(hum));
+        updateDisplay("NORMAL MODE", "L: " + String(lightValue), "C|H: " + String(temp) + "|" + String(hum));
+        String telemetry = "{\"device_id\":\"test_1\",\"cmd\":\"TELEMETRY\",\"light\":" + String(lightValue) +
+                           ",\"temp\":" + String(temp, 1) + ",\"hum\":" + String(hum, 0) + "}";
+        mqttClient.publish(D2C_TOPIC, (const uint8_t*)telemetry.c_str(), telemetry.length(), false);
       }
     }
   }
+
   if (digitalRead(BUTTON_CALIB_PIN) == LOW) {
     delay(200);
     isCalibrating = !isCalibrating;
     String cmd = isCalibrating ? "START" : "STOP";
     String msg = "{\"device_id\":\"test_1\",\"cmd\":\"" + cmd + "\"}";
     mqttClient.publish(D2C_TOPIC, (const uint8_t*)msg.c_str(), msg.length(), false);
-    if (isCalibrating) updateDisplay("CALIB STARTED");
-    else updateDisplay("CALIB STOPPED");
+    updateDisplay(isCalibrating ? "CALIB STARTED" : "CALIB STOPPED");
     while(digitalRead(BUTTON_CALIB_PIN) == LOW);
   }
+
   if (isCalibrating && millis() - lastCalibSend > 2000) {
     lastCalibSend = millis();
-    String dataMsg = "{\"device_id\":\"test_1\",\"cmd\":\"DATA\",\"values\":[" 
+    String dataMsg = "{\"device_id\":\"test_1\",\"cmd\":\"DATA\",\"values\":["
                      + String(lightValue) + "," + String(temp, 1) + "," + String(hum, 0) + "]}";
     mqttClient.publish(D2C_TOPIC, (const uint8_t*)dataMsg.c_str(), dataMsg.length(), false);
-  }
-  if (digitalRead(BUTTON_SEND_PIN) == LOW) {
-    delay(50);
-    if (digitalRead(BUTTON_SEND_PIN) == LOW && !isCalibrating) {
-      String telemetry = "{\"device_id\":\"test_1\",\"cmd\":\"UPLOAD\",\"light\":" + String(lightValue) + 
-                         ",\"temp\":" + String(temp, 1) + ",\"hum\":" + String(hum, 0) + "}";
-      mqttClient.publish(D2C_TOPIC, (const uint8_t*)telemetry.c_str(), telemetry.length(), false);
-      while(digitalRead(BUTTON_SEND_PIN) == LOW);
-    }
   }
 }

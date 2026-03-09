@@ -27,7 +27,7 @@ class EventProcessor:
             print(f"Number of buffered samples: {len(self.buffer)} | Received cmd: {cmd}")
             if cmd == "START":
                 self.is_calibrating = True
-                self.buffer = []
+                # self.buffer = []
                 print("[EVENT] Start Calibration")
             elif cmd == "DATA" and self.is_calibrating:
                 vals = payload.get("values")
