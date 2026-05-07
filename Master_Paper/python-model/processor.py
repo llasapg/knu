@@ -1,7 +1,9 @@
 import os
 import json
+from sqlite3 import Date
 import trainer
 import azure_helper
+from datetime import datetime
 
 DEVICE_ID = azure_helper.DEVICE_ID
 
@@ -16,6 +18,7 @@ class EventProcessor:
         self.max_vals = None
 
     def process_event(self, partition_context, event):
+        now = datetime.now()
         try:
             device_id = event.system_properties.get(b'iothub-connection-device-id').decode()
             if device_id != DEVICE_ID:
@@ -23,20 +26,19 @@ class EventProcessor:
                 return
             payload = json.loads(event.body_as_str())
             cmd = payload.get("cmd")
-            print(f"[EVENT] Received cmd: {cmd} from device: {device_id}")
+            print(f"{now}[EVENT] Received cmd: {cmd} from device: {device_id}")
             print(f"Number of buffered samples: {len(self.buffer)} | Received cmd: {cmd}")
             if cmd == "START":
                 self.is_calibrating = True
-                # self.buffer = []
-                print("[EVENT] Start Calibration")
+                self.buffer = []
+                print(f"{now}[EVENT] Start Calibration")
             elif cmd == "DATA" and self.is_calibrating:
                 vals = payload.get("values")
                 if vals:
                     self.buffer.append(vals)
-                print(f"[EVENT] Buffered data. Current buffer size: {len(self.buffer)}")
+                print(f"{now}[EVENT] Buffered data. Current buffer size: {len(self.buffer)}")
             elif cmd == "STOP" and self.is_calibrating:
                 self.is_calibrating = False
                 trainer.train_and_upload(self)
-            elif cmd == "UPLOAD":
-                azure_helper.update_device_twin(DEVICE_ID, 0.0002)
-        except Exception: pass
+        except Exception as e:
+            print(f"{now}[ERROR] process_event failed: {e}")

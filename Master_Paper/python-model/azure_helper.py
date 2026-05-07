@@ -12,9 +12,9 @@ NET_SERVICE_URL = os.getenv("NET_SERVICE_URL", "http://localhost:5000/api/iot/up
 EVENTHUB_NAME = os.getenv("EVENTHUB_NAME")
 IOTHUB_CONNECTION_STR = os.getenv("IOTHUB_CONNECTION_STR")
 
-def upload_model_to_blob(tflite_model_bytes, device_id, threshold):
+def upload_model_to_blob(tflite_model_bytes, device_id, threshold, min_vals, max_vals):
     try:
-        h_file_content = bytes_to_c_array(tflite_model_bytes, threshold)
+        h_file_content = bytes_to_c_array(tflite_model_bytes, threshold, min_vals, max_vals)
         blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONN_STR)
 
         container_name = "models"
@@ -33,13 +33,21 @@ def upload_model_to_blob(tflite_model_bytes, device_id, threshold):
         print(f"[ERROR] Blob upload failed: {e}")
         return None
 
-def bytes_to_c_array(data, threshold, var_name="smartiot_model"):
+def bytes_to_c_array(data, threshold, min_vals, max_vals, var_name="smartiot_model"):
     hex_data = [f"0x{b:02x}" for b in data]
     c_code = f"#ifndef MODEL_DATA_H\n#define MODEL_DATA_H\n\n"
     c_code += f"unsigned char {var_name}[] = {{\n  "
     c_code += ", ".join(hex_data)
     c_code += f"\n}};\n\nunsigned int {var_name}_len = {len(data)};\n"
-    c_code += f"float {var_name}_threshold = {threshold:.6f};\n\n#endif"
+    c_code += f"float {var_name}_threshold = {threshold:.6f};\n"
+
+    # --- ДОБАВЛЯЕМ МАССИВЫ МИНИМУМОВ И МАКСИМУМОВ ---
+    min_str = ", ".join([f"{v:.6f}" for v in min_vals])
+    max_str = ", ".join([f"{v:.6f}" for v in max_vals])
+    c_code += f"float {var_name}_min_vals[] = {{{min_str}}};\n"
+    c_code += f"float {var_name}_max_vals[] = {{{max_str}}};\n\n"
+
+    c_code += f"#endif"
     return c_code
 
 def update_device_twin(device_id, threshold, min_vals=None, max_vals=None):

@@ -1,0 +1,9 @@
+flowchart TD
+    A["ESP32 у режимі Calibration"] --> B["Надсилання сирих MQTT-повідомлень"]
+    B --> C["Azure IoT Hub"]
+    C --> D["Backend C#/.NET"]
+    D --> E["Аналіз даних / перенавчання / оцінка τ_new"]
+    E --> F["Оновлення desired properties у Device Twins"]
+    F --> G["ESP32 отримує τ_new"]
+    G --> H["Застосування нового порогу"]
+    H --> I["Повернення в режим Optimized"]

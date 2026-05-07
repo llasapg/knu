@@ -1,0 +1,9 @@
+flowchart LR
+    PS["Живлення / акумулятор"] --> ESP["ESP32"]
+    BTN["Кнопки режимів"] --> ESP
+    LED["Статусні індикатори"] --> ESP
+    S1["Сенсор 1<br/>температура / струм / вібрація"] --> ESP
+    S2["Сенсор 2<br/>опційно"] --> ESP
+    ESP --> MEM["Статичні буфери / tensor arena"]
+    ESP --> WIFI["Wi-Fi модуль"]
+    WIFI --> CLOUD["Azure IoT Hub"]

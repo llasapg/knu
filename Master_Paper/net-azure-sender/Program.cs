@@ -1,7 +1,6 @@
 ﻿using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Shared;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json.Serialization;
+using net_azure_sender;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,17 +9,14 @@ builder.Services.AddSingleton(RegistryManager.CreateFromConnectionString(iotHubC
 
 var app = builder.Build();
 
-
 app.MapPost("/api/iot/update-twin", async (
     [FromBody] TwinUpdateDto data,
     [FromServices] RegistryManager registryManager) =>
 {
     try
     {
-        // 1. Получаем текущий твин девайса
         var twin = await registryManager.GetTwinAsync(data.DeviceId);
-
-        // 2. Формируем патч желаемых свойств (desired)
+        
         var patch = new
         {
             properties = new
@@ -36,13 +32,13 @@ app.MapPost("/api/iot/update-twin", async (
                 }
             }
         };
-
-        // 3. Отправляем обновление в Azure
+        
         await registryManager.UpdateTwinAsync(data.DeviceId,
             Newtonsoft.Json.JsonConvert.SerializeObject(patch),
             twin.ETag);
 
         Console.WriteLine($"[SUCCESS] Twin updated for {data.DeviceId}");
+        
         return Results.Ok(new { status = "success", deviceId = data.DeviceId });
     }
     catch (Exception ex)
@@ -53,12 +49,3 @@ app.MapPost("/api/iot/update-twin", async (
 });
 
 app.Run();
-
-// DTO для приема данных
-public record TwinUpdateDto(
-    [property: JsonPropertyName("deviceId")] string DeviceId,
-    [property: JsonPropertyName("threshold")] double Threshold,
-    [property: JsonPropertyName("modelUrl")] string ModelUrl,
-    [property: JsonPropertyName("minVals")] double[] MinVals,
-    [property: JsonPropertyName("maxVals")] double[] MaxVals
-);

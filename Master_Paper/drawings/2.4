@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> Normal
+    [*] --> Optimized
+
+    Normal --> Optimized : перемикання режиму
+    Optimized --> Normal : перемикання режиму
+
+    Normal --> Calibration : запуск калібрування
+    Optimized --> Calibration : виявлено drift / ручний запуск
+    Calibration --> Optimized : новий τ отримано
+    Calibration --> Normal : аварійний / сервісний режим

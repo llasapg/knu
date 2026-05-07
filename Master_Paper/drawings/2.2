@@ -1,0 +1,8 @@
+flowchart TD
+    A["Сирий часовий ряд X_t"] --> B["Нормалізація N(X_t)"]
+    B --> C["Encoder: z = f_enc(X_t)"]
+    C --> D["Decoder: X_hat_t = f_dec(z)"]
+    D --> E["Розрахунок MSE(X_t, X_hat_t)"]
+    E --> F{"MSE > τ ?"}
+    F -->|"Так"| G["Передача MQTT Payload"]
+    F -->|"Ні"| H["Локальне відхилення передачі"]

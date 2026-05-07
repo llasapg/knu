@@ -77,12 +77,10 @@ void setupCloud(const char* ssid, const char* pass, const char* host, int port, 
 }
 
 bool maintainConnection(const char* deviceId, const char* host, const char* key, int ttl) {
-  // If already connected, just return true
   if (mqttClient.connected()) {
     return true;
   }
 
-  // Attempt to connect
   Serial.println("Attempting MQTT connection...");
   String uri = String(host) + "/devices/" + String(deviceId);
   String sas = generate_sas_token(uri.c_str(), key, ttl);
@@ -91,10 +89,8 @@ bool maintainConnection(const char* deviceId, const char* host, const char* key,
   if (mqttClient.connect(deviceId, user.c_str(), sas.c_str())) {
     Serial.println("Connected to Azure IoT Hub");
 
-    // Subscribe to Twin updates
     bool s1 = mqttClient.subscribe(TWIN_DESIRED_PATCH_TOPIC);
 
-    // Subscribe to C2D messages
     String subTopic = "devices/" + String(deviceId) + "/messages/devicebound/#";
     bool s2 = mqttClient.subscribe(subTopic.c_str());
 

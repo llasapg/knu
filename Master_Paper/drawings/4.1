@@ -1,0 +1,9 @@
+flowchart LR
+    PY["Python + TensorFlow<br/>Навчання моделі"] --> TFL["TFLite / Int8 model"]
+    TFL --> FW["C++ Firmware on ESP32"]
+    FW --> MQTT["MQTT over TLS"]
+    MQTT --> HUB["Azure IoT Hub"]
+    HUB --> BE["C#/.NET Backend"]
+    BE --> DB[("PostgreSQL")]
+    BE --> TW["Azure Device Twins"]
+    TW --> FW

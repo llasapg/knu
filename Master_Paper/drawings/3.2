@@ -1,0 +1,22 @@
+flowchart TD
+    START["Запуск ESP32"] --> INIT["Ініціалізація Wi-Fi, MQTT, моделі TFLM"]
+    INIT --> MODE{"Обраний режим"}
+    MODE -- "Normal" --> N1["Зчитування сенсорів"]
+    N1 --> N2["Формування сирого Payload"]
+    N2 --> N3["Надсилання в Azure IoT Hub"]
+    N3 --> LOOP["Наступний цикл"]
+
+    MODE -- "Optimized" --> O1["Зчитування N відліків"]
+    O1 --> O2["Нормалізація вікна"]
+    O2 --> O3["Inference Autoencoder"]
+    O3 --> O4["Обчислення MSE"]
+    O4 --> O5{"MSE > τ ?"}
+    O5 -- "Так" --> O6["Надсилання Alert/MQTT Payload"]
+    O5 -- "Ні" --> O7["Пропуск передачі / Deep Sleep"]
+    O6 --> LOOP
+    O7 --> LOOP
+
+    MODE -- "Calibration" --> C1["Зчитування сирих даних"]
+    C1 --> C2["Надсилання Calibration-пакета"]
+    C2 --> C3["Очікування оновлення τ через Device Twins"]
+    C3 --> LOOP

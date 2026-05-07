@@ -1,0 +1,7 @@
+flowchart TD
+    A["Отримання D2C повідомлення"] --> B{"Тип payload"}
+    B -- "Alert" --> C["Зберегти подію в PostgreSQL"]
+    B -- "CalibrationData" --> D["Зберегти сире вікно"]
+    D --> E["Переоцінка порогу / перенавчання"]
+    E --> F["Оновлення desired properties"]
+    F --> G["Пристрій отримує τ_new"]

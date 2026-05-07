@@ -1,0 +1,26 @@
+flowchart TD
+    subgraph Edge["Edge-рівень (ESP32)"]
+        S["Сенсори / ADC / GPIO"] --> B["Буферизація вікна даних"]
+        B --> N["Нормалізація"]
+        N --> M["TinyML Inference<br/>Autoencoder Int8"]
+        M --> E["Обчислення MSE"]
+        E --> D{"MSE > τ ?"}
+        D -- "Ні" --> SKIP["Локальне відхилення<br/>без передачі"]
+        D -- "Так" --> P["Формування MQTT Payload"]
+        BTN["Фізичні кнопки режимів"] --> CTRL["Керування режимами<br/>Normal / Optimized / Calibration"]
+        CTRL --> B
+        CTRL --> P
+    end
+
+    P --> MQTT["MQTT over TLS"]
+    MQTT --> HUB["Azure IoT Hub"]
+
+    subgraph Cloud["Хмарний рівень"]
+        HUB --> BE["Backend C#/.NET"]
+        BE --> DB[("PostgreSQL")]
+        BE --> RETRAIN["Перенавчання / переоцінка τ"]
+        RETRAIN --> TWIN["Azure Device Twins"]
+    end
+
+    TWIN --> HUB
+    HUB --> EDGECFG["Отримання конфігурації на ESP32"]
