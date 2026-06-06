@@ -61,10 +61,10 @@ def train_and_upload(self):
 
             tflite_model_bytes = converter.convert()
 
-            azure_helper.upload_model_to_blob(tflite_model_bytes, DEVICE_ID, threshold, self.min_vals, self.max_vals)
+            sas_url = azure_helper.upload_model_to_blob(tflite_model_bytes, DEVICE_ID, threshold, self.min_vals, self.max_vals)
 
             print(f"[SUCCESS] Model uploaded. Norm Threshold: {threshold:.6f}")
-            azure_helper.update_device_twin(DEVICE_ID, float(threshold))
+            azure_helper.update_device_twin(DEVICE_ID, float(threshold), sas_url, self.min_vals, self.max_vals)
 
         except Exception as e:
             print(f"[ERROR] Upload failed: {e}")

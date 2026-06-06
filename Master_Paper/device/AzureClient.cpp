@@ -73,6 +73,7 @@ void setupCloud(const char* ssid, const char* pass, const char* host, int port, 
   while (!getLocalTime(&timeinfo)) delay(500);
   secureClient.setInsecure();
   mqttClient.setServer(host, port);
+  mqttClient.setBufferSize(8192);   // twin responses can be large
   mqttClient.setCallback(callback);
 }
 
@@ -90,11 +91,16 @@ bool maintainConnection(const char* deviceId, const char* host, const char* key,
     Serial.println("Connected to Azure IoT Hub");
 
     bool s1 = mqttClient.subscribe(TWIN_DESIRED_PATCH_TOPIC);
+    bool s2 = mqttClient.subscribe("$iothub/twin/res/#");
 
     String subTopic = "devices/" + String(deviceId) + "/messages/devicebound/#";
-    bool s2 = mqttClient.subscribe(subTopic.c_str());
+    bool s3 = mqttClient.subscribe(subTopic.c_str());
 
-    Serial.printf("Subscriptions: Twin=%s, C2D=%s\n", s1 ? "OK" : "FAIL", s2 ? "OK" : "FAIL");
+    Serial.printf("Subscriptions: Twin=%s, TwinRes=%s, C2D=%s\n",
+      s1 ? "OK" : "FAIL", s2 ? "OK" : "FAIL", s3 ? "OK" : "FAIL");
+
+    // Request current twin desired properties
+    mqttClient.publish("$iothub/twin/GET/?$rid=1", "");
 
     return true;
   }
