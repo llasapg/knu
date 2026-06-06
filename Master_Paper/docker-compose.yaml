@@ -8,7 +8,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5000
-      - IOTHUB_SERVICE_STR="Endpoint=sb://ihsuprodamres035dednamespace.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=rr0L4ujscyGXPgPHABrBRB+OnhJJteg+zAIoTLeMFis=;EntityPath=iothub-ehub-knu2026-66480245-b8c893d427"
+      - IOTHUB_SERVICE_STR=""
     ports:
       - "5000:5000"
     restart: always
